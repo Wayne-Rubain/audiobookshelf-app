@@ -2,10 +2,7 @@ package com.audiobookshelf.app.data
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
@@ -263,14 +260,7 @@ class PlaybackSession(
 
     // Local covers get bitmap synchronously, no async fetch needed
     if (localLibraryItem?.coverContentUrl != null) {
-      resolvedCoverBitmap =
-              if (Build.VERSION.SDK_INT < 28) {
-                MediaStore.Images.Media.getBitmap(ctx.contentResolver, coverUri)
-              } else {
-                val source: ImageDecoder.Source =
-                        ImageDecoder.createSource(ctx.contentResolver, coverUri)
-                ImageDecoder.decodeBitmap(source)
-              }
+      resolvedCoverBitmap = decodeLocalCoverBitmap(ctx, coverUri, NOW_PLAYING_COVER_MAX_PX)
       onArtResolved()
       return null
     }

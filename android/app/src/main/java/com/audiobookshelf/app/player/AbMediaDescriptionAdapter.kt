@@ -2,10 +2,7 @@ package com.audiobookshelf.app.player
 
 import android.app.PendingIntent
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
 import com.google.android.exoplayer2.Player
@@ -48,13 +45,7 @@ class AbMediaDescriptionAdapter (private val controller: MediaControllerCompat, 
       currentIconUri = albumArtUri
 
       if (currentIconUri.toString().startsWith("content://")) {
-        currentBitmap = if (Build.VERSION.SDK_INT < 28) {
-          @Suppress("DEPRECATION")
-          MediaStore.Images.Media.getBitmap(playerNotificationService.contentResolver, currentIconUri)
-        } else {
-          val source: ImageDecoder.Source = ImageDecoder.createSource(playerNotificationService.contentResolver, currentIconUri!!)
-          ImageDecoder.decodeBitmap(source)
-        }
+        currentBitmap = decodeLocalCoverBitmap(playerNotificationService, currentIconUri!!, NOW_PLAYING_COVER_MAX_PX)
         currentBitmap
       } else {
         serviceScope.launch {

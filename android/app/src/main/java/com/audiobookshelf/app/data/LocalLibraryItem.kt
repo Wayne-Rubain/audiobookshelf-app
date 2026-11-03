@@ -2,11 +2,8 @@ package com.audiobookshelf.app.data
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
 import android.support.v4.media.MediaDescriptionCompat
 import android.util.Log
 import androidx.core.content.FileProvider
@@ -17,7 +14,9 @@ import com.audiobookshelf.app.R
 import com.audiobookshelf.app.device.DeviceManager
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.audiobookshelf.app.player.BROWSE_COVER_MAX_PX
 import com.audiobookshelf.app.player.PLAYMETHOD_LOCAL
+import com.audiobookshelf.app.player.decodeLocalCoverBitmap
 import java.io.File
 import java.util.*
 
@@ -142,12 +141,9 @@ class LocalLibraryItem(
 
     var bitmap:Bitmap? = null
     if (coverContentUrl != null) {
-      bitmap = if (Build.VERSION.SDK_INT < 28) {
-        MediaStore.Images.Media.getBitmap(ctx.contentResolver, coverUri)
-      } else {
-        val source: ImageDecoder.Source = ImageDecoder.createSource(ctx.contentResolver, coverUri)
-        ImageDecoder.decodeBitmap(source)
-      }
+      // Called for every downloaded item when Android Auto loads the Downloads list,
+      // so decode small thumbnails rather than full size covers
+      bitmap = decodeLocalCoverBitmap(ctx, coverUri, BROWSE_COVER_MAX_PX)
     }
 
     val extras = Bundle()
