@@ -48,8 +48,23 @@ android {
       ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
   }
+  signingConfigs {
+    // Fork test builds only: the Build APK workflow writes a fixed debug key and sets
+    // DEBUG_KEYSTORE_PATH, so each test build can update the installed test app in place
+    if (System.getenv("DEBUG_KEYSTORE_PATH")) {
+      fixedDebug {
+        storeFile file(System.getenv("DEBUG_KEYSTORE_PATH"))
+        storePassword "android"
+        keyAlias "androiddebugkey"
+        keyPassword "android"
+      }
+    }
+  }
   buildTypes {
     debug {
+      if (System.getenv("DEBUG_KEYSTORE_PATH")) {
+        signingConfig signingConfigs.fixedDebug
+      }
       applicationIdSuffix ".debug"
       versionNameSuffix "-debug"
       minifyEnabled false

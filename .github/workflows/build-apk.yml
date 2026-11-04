@@ -47,12 +47,28 @@ jobs:
             echo "::error::DEBUG_KEYSTORE_BASE64 secret is not set"
             exit 1
           fi
-          mkdir -p ~/.android
-          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
-          keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep -E "SHA256:"
+          keystore="$RUNNER_TEMP/abs-debug.keystore"
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          keytool -list -v -keystore "$keystore" -storepass android -alias androiddebugkey | grep -E "SHA256:"
+          echo "DEBUG_KEYSTORE_PATH=$keystore" >> "$GITHUB_ENV"
 
       - name: build Android app
         run: ./android/gradlew assembleDebug -p android --no-daemon
+
+      # Fail the build unless the APK is really signed with the fixed debug key
+      - name: verify APK signing key
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | tee apk-certs.txt
+          expected="577069c2fb9ebf883b529e4303c947d9c7a14a28ee97eba5cea5aa56df25d72c"
+          if ! grep -qi "certificate SHA-256 digest: $expected" apk-certs.txt; then
+            echo "::error::APK is not signed with the fixed debug key"
+            exit 1
+          fi
+          if [ "$(grep -ci 'certificate SHA-256 digest' apk-certs.txt)" != "1" ]; then
+            echo "::error::APK has more than one signer"
+            exit 1
+          fi
 
       - name: rename apk
         working-directory: android/app/build/outputs/apk/debug/
